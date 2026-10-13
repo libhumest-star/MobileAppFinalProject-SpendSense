@@ -66,10 +66,14 @@ Mockups: `.superpowers/brainstorm/*/content/screens.html` (local only, not commi
 - Fields: Amount (decimal keyboard), Currency (dropdown, default = home
   currency), Title, Category (chips), Date (date picker, default today), Note
   (optional).
-- When currency ≠ home: after a 400 ms debounce on amount/currency changes, fetch
-  the rate and show "≈ ฿389.40 · 1 USD = 32.45 THB" below the amount.
+- When currency ≠ home: fetch the rate when the currency changes (a newer
+  selection cancels an older fetch; no network call per keystroke, because the
+  rate doesn't depend on the amount) and show "≈ ฿389.40 · 1 USD = 32.45 THB"
+  below the amount.
 - Validation: amount > 0; title not blank. Save button disabled until valid.
-- Edit mode: top bar has a Delete action (with confirm dialog).
+- Edit mode: top bar has a Delete action (with confirm dialog). If the amount and
+  currency are unchanged, saving keeps the stored home amount (no re-conversion,
+  works offline).
 - Save → back to the previous screen.
 
 ### 3.3 Insights
@@ -95,7 +99,7 @@ Mockups: `.superpowers/brainstorm/*/content/screens.html` (local only, not commi
   chip sends it.
 - Input field + send button. Send is disabled while waiting. A "typing…" bubble
   shows while loading.
-- Failed request → error bubble with Retry.
+- Failed request → error bubble; Retry is offered when it is the last message.
 - Small footer text: "Your expense data is sent to Google Gemini to answer."
 - History lives in the ViewModel only (resets on app restart).
 
@@ -106,7 +110,8 @@ Mockups: `.superpowers/brainstorm/*/content/screens.html` (local only, not commi
 - **Load demo data**: confirm dialog "This replaces all expenses with sample
   data" → loads (§8).
 - **Clear all expenses**: confirm dialog → deletes all expenses and insights.
-- **About**: AI model name, "Exchange rates: Frankfurter API", version.
+- **About**: AI model name, Gemini API key Set/Missing, "Exchange rates:
+  Frankfurter API", version.
 
 ## 4. Architecture
 
@@ -132,10 +137,11 @@ Compose screens  ──observe StateFlow<UiState>──▶  ViewModels (viewMode
 
 ```
 SpendSenseApp.kt, MainActivity.kt, AppContainer.kt
-data/local/        AppDatabase, ExpenseDao, InsightDao, entities, Converters
-data/remote/       FrankfurterApi, GeminiApi, DTOs
-data/repository/   ExpenseRepository, CurrencyRepository, AiRepository, SettingsRepository
-domain/            Expense, Category, ExpenseContextBuilder, AppError, DemoData
+data/local/        AppDatabase, ExpenseDao, InsightDao, entities + mappers
+data/remote/       FrankfurterApi, GeminiApi, DTOs, NetworkModule, safeApiCall
+data/repository/   ExpenseRepository, CurrencyRepository, AiRepository, SettingsRepository, AiPrompts
+domain/            Expense, Category, Money, Dates, SupportedCurrencies, ExpenseContextBuilder,
+                   Insight, AppError, DemoData
 ui/navigation/     routes, NavHost, bottom bar
 ui/expenses/       ExpensesScreen, ExpensesViewModel
 ui/addedit/        AddEditExpenseScreen, AddEditViewModel
@@ -143,7 +149,7 @@ ui/insights/       InsightsScreen, InsightsViewModel
 ui/askai/          AskAiScreen, AskAiViewModel
 ui/settings/       SettingsScreen, SettingsViewModel
 ui/theme/          Material 3 theme (green)
-ui/common/         money formatting, shared composables
+ui/common/         ViewModel factory helper, shared composables
 ```
 
 ## 5. Data model
@@ -162,7 +168,7 @@ an emoji/icon and a color. Stored in Room as the enum name.
 | `amountHome` | Double | in current home currency, rounded to 2 decimals |
 | `originalAmount` | Double | as entered |
 | `originalCurrency` | String | ISO code, e.g. "USD" |
-| `date` | Long (LocalDate.toEpochDay) | via TypeConverter |
+| `date` | Long (LocalDate.toEpochDay) | converted in the entity mappers |
 | `note` | String? | |
 
 DAO: `observeBetween(start, end): Flow<List<ExpenseEntity>>`,
@@ -204,12 +210,13 @@ in debug builds, and `suspend` functions called from `viewModelScope`.
 ### 6.2 Gemini (AI)
 - Endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
 - Auth header: `x-goog-api-key: BuildConfig.GEMINI_API_KEY`
-- Model: constant `GEMINI_MODEL = "gemini-2.5-flash"`. Confirm at
-  implementation start that this ID is available on the free tier, and update the
-  constant if not.
+- Model: constant `GeminiConfig.MODEL = "gemini-3.8-flash"`. Verified 2026-10-13:
+  `gemini-2.5-flash` is limited to existing users, and Google recommends 3.8 Flash
+  (free tier) for new projects.
 - Request uses `systemInstruction`, `contents` (role `user`/`model`) and
-  `generationConfig` (temperature 0.3; for Insights also
-  `responseMimeType: "application/json"` + `responseSchema`).
+  `generationConfig` with `thinkingConfig.thinkingLevel = "low"` (fast replies).
+  Temperature is left at the Gemini 3 default (1.0), as Google recommends. For
+  Insights, also `responseMimeType: "application/json"` + `responseSchema`.
 - Timeout: 30 s read timeout on the Gemini OkHttp client.
 
 ## 7. Feature flows
@@ -242,7 +249,8 @@ It also exposes `monthContext(month)` used for the Insights `dataHash`.
   current month and the 2 previous months, rebuilt on every send so it reflects
   the latest data.
 - Rules: answer only from the data, say so if the data doesn't contain the
-  answer, plain text, 1–4 sentences, amounts formatted with the currency.
+  answer, plain text, 1–4 sentences, amounts formatted with the currency. Weeks
+  or months that aren't listed had no expenses.
 - `contents` = the last 10 successful chat messages (user/model pairs only, so
   the list starts with a user turn), then the new question. The local greeting
   bubble and error bubbles are never sent.
@@ -264,9 +272,9 @@ check your connection or enter the amount in {HOME}" and don't save.
 
 ## 8. Demo data
 
-`DemoData` produces a fixed (seeded, reproducible) list of about 70 expenses: the
-previous full month plus the current month up to today, with realistic titles per
-category. Amounts are defined in THB, plus 2 USD subscriptions (e.g. Netflix
+`DemoData` produces a fixed (seeded, reproducible) list of about 2 expenses per
+day (at least one every day): the previous full month plus the current month up
+to today, with realistic titles per category. Amounts are defined in THB, plus 2 USD subscriptions (e.g. Netflix
 $12, Spotify $6).
 
 Load flow (Settings): confirm → fetch THB→home and USD→home rates (rate 1.0 when
@@ -319,10 +327,12 @@ mode: verify the error messages.
 - Remove the cloned OpenRouter client entirely (app sources, `assets/`,
   `README.ru.md`, its `README.md` and `LICENSE`), then create a fresh project
   with `applicationId`/`namespace` `com.spendsense.app`.
-- Stack: Kotlin 2.x, Compose BOM + Material 3, Navigation Compose (type-safe
-  routes), Room + KSP, Retrofit + kotlinx.serialization converter, OkHttp logging
-  interceptor, DataStore Preferences, kotlinx-coroutines. minSdk 26,
-  target/compileSdk 36.
+- Stack (verified to build on this machine, matching the Android Studio
+  2026.1 template): AGP 9.3.2 with built-in Kotlin 2.2.10, Gradle 9.5.0, KSP
+  2.3.4, Compose BOM 2026.09.00 (Material 3 1.4), Navigation Compose 2.10.2
+  (type-safe routes), Room 2.8.4, Retrofit 3.0.0 + kotlinx.serialization
+  converter, OkHttp logging 5.3.2, DataStore Preferences 1.2.1. minSdk 26,
+  compileSdk/targetSdk 37.
 - `GEMINI_API_KEY=...` in `local.properties` (git-ignored) → exposed as
   `BuildConfig.GEMINI_API_KEY`. The README explains how to get a free key from
   Google AI Studio.
