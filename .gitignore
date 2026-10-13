@@ -12,3 +12,6 @@ local.properties
 
 # Brainstorming mockups
 .superpowers/
+
+# Kotlin 2.x compiler caches
+.kotlin/
