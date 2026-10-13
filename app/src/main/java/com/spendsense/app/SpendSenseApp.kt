@@ -2,5 +2,12 @@ package com.spendsense.app
 
 import android.app.Application
 
-/** Gets its AppContainer in Task 4. */
-class SpendSenseApp : Application()
+class SpendSenseApp : Application() {
+    lateinit var container: AppContainer
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+        container = AppContainer(this)
+    }
+}
