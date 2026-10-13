@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SpendSense Screens</title>
+<!--
+  Screen designs for the presentation. Mirrors the Compose code (theme colors in ui/theme/Theme.kt,
+  layouts and copy in each *Screen.kt). Open with #expenses, #add, #insights, #askai, #settings for a
+  single 412x915 screen, or #overview for all five side by side. PNGs are rendered by render.sh.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #2E7D32; --on-primary: #FFFFFF;
+    --primary-container: #C5E8C0; --on-primary-container: #0B3D0F;
+    --secondary-container: #D5E8CF; --on-secondary-container: #0B3D0F;
+    --tertiary-container: #9CF0F5;
+    --surface: #F7FAF6; --surface-low: #FFFFFF; --surface-container: #EBF0E8; --surface-high: #E5EBE2;
+    --on-surface: #1A1C19; --on-surface-variant: #424940; --outline: #72796F; --outline-variant: #C2C9BD;
+    --error: #BA1A1A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Roboto, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  svg.i { width: 24px; height: 24px; fill: currentColor; flex-shrink: 0; }
+
+  /* ---- Phone surface ---- */
+  .phone { width: 412px; height: 915px; background: var(--surface); color: var(--on-surface);
+           position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .status { height: 36px; flex-shrink: 0; padding: 0 22px 0 26px; display: flex; align-items: center;
+            justify-content: space-between; font-size: 14px; font-weight: 500; }
+  .status .icons { display: flex; gap: 6px; align-items: center; }
+  .gesture { height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .gesture div { width: 108px; height: 4px; border-radius: 2px; background: var(--on-surface); opacity: .55; }
+
+  /* ---- Top app bars ---- */
+  .appbar { height: 64px; flex-shrink: 0; display: flex; align-items: center; padding: 0 4px; }
+  .appbar .title { font-size: 22px; flex: 1; }
+  .appbar.center .title { text-align: center; }
+  .appbar.small .title { padding-left: 4px; }
+  .iconbtn { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+             color: var(--on-surface-variant); }
+  .iconbtn.disabled { opacity: .38; }
+
+  .content { flex: 1; overflow: hidden; position: relative; }
+
+  /* ---- Bottom navigation ---- */
+  .navbar { flex-shrink: 0; background: var(--surface-container); }
+  .navbar .items { height: 80px; display: flex; }
+  .navbar .item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                  gap: 4px; font-size: 12px; font-weight: 500; color: var(--on-surface-variant); }
+  .navbar .pill { width: 64px; height: 32px; border-radius: 16px; display: flex; align-items: center;
+                  justify-content: center; }
+  .navbar .item.on .pill { background: var(--secondary-container); color: var(--on-secondary-container); }
+  .navbar .item.on { color: var(--on-surface); }
+
+  /* ---- Expenses ---- */
+  .list { padding: 0 16px; display: flex; flex-direction: column; gap: 6px; }
+  .summary { background: var(--primary); color: var(--on-primary); border-radius: 20px; padding: 20px; }
+  .summary .l { font-size: 14px; font-weight: 500; }
+  .summary .big { font-size: 32px; font-weight: 700; line-height: 40px; margin: 2px 0; }
+  .summary .s { font-size: 12px; font-weight: 500; }
+  .dayhdr { font-size: 12px; font-weight: 500; letter-spacing: .5px; color: var(--on-surface-variant);
+            padding: 12px 4px 2px; }
+  .row { background: var(--surface-low); border-radius: 16px; padding: 10px 12px; display: flex;
+         align-items: center; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .badge { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
+           justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .row .t { flex: 1; min-width: 0; }
+  .row .t .n { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .t .c { font-size: 12px; color: var(--on-surface-variant); margin-top: 1px; }
+  .row .a { text-align: right; font-size: 16px; font-weight: 600; }
+  .row .a .o { font-size: 12px; font-weight: 400; color: var(--on-surface-variant); margin-top: 1px; }
+  .fab { position: absolute; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: 16px;
+         background: var(--primary-container); color: var(--on-primary-container); display: flex;
+         align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,.2), 0 1px 3px rgba(0,0,0,.12); }
+
+  /* ---- Form ---- */
+  .form { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .field { position: relative; border: 1px solid var(--outline); border-radius: 4px; height: 56px;
+           display: flex; align-items: center; padding: 0 16px; font-size: 16px; }
+  .field.big { height: 64px; font-size: 24px; }
+  .field label { position: absolute; top: -9px; left: 12px; padding: 0 4px; background: var(--surface);
+                 font-size: 12px; color: var(--on-surface-variant); }
+  .field.empty { color: var(--on-surface-variant); }
+  .obtn { height: 40px; border: 1px solid var(--outline); border-radius: 20px; display: flex;
+          align-items: center; justify-content: center; gap: 2px; padding: 0 12px 0 20px; font-size: 14px;
+          font-weight: 500; color: var(--primary); }
+  .infocard { background: var(--secondary-container); border-radius: 12px; padding: 12px; font-size: 14px;
+              line-height: 20px; }
+  .lbl { font-size: 14px; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -4px; }
+  .chip { height: 32px; border: 1px solid var(--outline); border-radius: 8px; padding: 0 12px; display: flex;
+          align-items: center; font-size: 14px; font-weight: 500; color: var(--on-surface-variant); }
+  .chip.on { background: var(--secondary-container); border-color: var(--secondary-container);
+             color: var(--on-secondary-container); }
+  .btn { height: 40px; border-radius: 20px; background: var(--primary); color: var(--on-primary);
+         display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 500; }
+  .btn.tonal { background: var(--secondary-container); color: var(--on-secondary-container); align-self: flex-start;
+               padding: 0 24px 0 16px; }
+
+  /* ---- Insights ---- */
+  .cards { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .card { background: var(--surface-low); border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+          gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .card .lab { font-size: 14px; font-weight: 500; color: var(--on-surface-variant); }
+  .card .tot { font-size: 28px; font-weight: 700; line-height: 34px; margin-top: -8px; }
+  .bar .top { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+  .track { height: 8px; display: flex; gap: 4px; align-items: center; }
+  .track .fill { height: 8px; border-radius: 4px; }
+  .track .rest { height: 8px; border-radius: 4px; background: var(--secondary-container); flex: 1; position: relative; }
+  .ai { background: var(--tertiary-container); border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+        gap: 8px; font-size: 14px; line-height: 20px; }
+  .ai h3 { font-size: 16px; font-weight: 600; }
+  .ai h4 { font-size: 14px; font-weight: 600; }
+
+  /* ---- Chat ---- */
+  .chat { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .bubble { max-width: 300px; padding: 10px 14px; font-size: 14px; line-height: 20px; border-radius: 18px; }
+  .bubble.ai { background: var(--surface-high); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .bubble.me { background: var(--primary); color: var(--on-primary); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .suggest { display: flex; gap: 8px; padding: 0 12px; white-space: nowrap; overflow: hidden; }
+  .assist { height: 32px; border: 1px solid var(--outline-variant); border-radius: 8px; padding: 0 16px;
+            display: flex; align-items: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .inputrow { display: flex; align-items: center; padding: 4px 12px; }
+  .input { flex: 1; height: 56px; border: 1px solid var(--outline); border-radius: 24px; display: flex;
+           align-items: center; padding: 0 16px; font-size: 16px; color: var(--on-surface-variant); }
+  .send { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: var(--on-surface-variant); }
+  .privacy { font-size: 11px; font-weight: 500; color: var(--on-surface-variant); padding: 0 16px 8px; }
+
+  /* ---- Settings ---- */
+  .sect { font-size: 12px; font-weight: 500; letter-spacing: .5px; color: var(--primary); padding: 20px 16px 4px; }
+  .li { min-height: 56px; padding: 8px 24px 8px 16px; display: flex; align-items: center; gap: 16px; }
+  .li .t { flex: 1; } .li .h { font-size: 16px; } .li .s { font-size: 14px; color: var(--on-surface-variant); margin-top: 2px; }
+  .li .tr { font-size: 14px; color: var(--on-surface-variant); }
+  .li .tr.strong { font-size: 16px; font-weight: 500; color: var(--on-surface); }
+
+  /* ---- Overview (slide) ---- */
+  body.overview { width: 2560px; height: 1440px; background: linear-gradient(135deg, #E8F3E6 0%, #F7FAF6 55%, #E3F4F5 100%);
+                  display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  body.overview #root { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .ov-title { font-size: 64px; font-weight: 700; color: #1B5E20; }
+  .ov-sub { font-size: 28px; color: #424940; margin: 10px 0 48px; }
+  .ov-row { display: flex; gap: 44px; align-items: flex-start; }
+  .ov-item { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .frame { padding: 12px; border-radius: 48px; background: #1C1C1E; box-shadow: 0 24px 60px rgba(0,0,0,.22); }
+  .frame .phone { border-radius: 36px; text-align: left; }
+  .ov-cap { font-size: 26px; font-weight: 700; color: #1A1C19; }
+  .ov-cap span { display: block; font-size: 20px; font-weight: 400; color: #424940; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const P = {
+  left: "M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z",
+  right: "M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z",
+  add: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+  back: "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z",
+  drop: "M7 10l5 5 5-5z",
+  date: "M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z",
+  refresh: "M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z",
+  send: "M2.01 21L23 12 2.01 3 2 10l15 2-15 2z",
+  list: "M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z",
+  insights: "M4,10h4v10H4z M10,4h4v16h-4z M16,13h4v7h-4z",
+  ai: "M19,9l1.25,-2.75L23,5l-2.75,-1.25L19,1l-1.25,2.75L15,5l2.75,1.25L19,9zM11.5,9.5L9,4L6.5,9.5L1,12l5.5,2.5L9,20l2.5,-5.5L17,12l-5.5,-2.5zM19,15l-1.25,2.75L15,19l2.75,1.25L19,23l1.25,-2.75L23,19l-2.75,-1.25L19,15z",
+  settings: "M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z",
+  wifi: "M12 21l11.6-14.5C23.15 6.16 18.66 2.5 12 2.5S.85 6.16.4 6.5L12 21z",
+  battery: "M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z",
+  signal: "M2 22h20V2z",
+};
+const icon = (name, size = 24) =>
+  `<svg class="i" viewBox="0 0 24 24" style="width:${size}px;height:${size}px"><path d="${P[name]}"/></svg>`;
+
+// Category emoji + color, as in domain/Category.kt
+const CAT = {
+  FOOD: ["🍜", "Food", "#FB8C00"], TRANSPORT: ["🚕", "Transport", "#1E88E5"], SHOPPING: ["🛍️", "Shopping", "#43A047"],
+  BILLS: ["🧾", "Bills", "#8E24AA"], FUN: ["🎮", "Fun", "#E53935"], HEALTH: ["💊", "Health", "#00897B"], OTHER: ["📦", "Other", "#757575"],
+};
+const badge = c => `<div class="badge" style="background:${CAT[c][2]}2E">${CAT[c][0]}</div>`;
+
+const status = () => `<div class="status"><span>9:41</span><span class="icons">${icon("signal", 15)}${icon("wifi", 16)}${icon("battery", 17)}</span></div>`;
+const gesture = () => `<div class="gesture"><div></div></div>`;
+const navbar = active => {
+  const items = [["list", "Expenses"], ["insights", "Insights"], ["ai", "Ask AI"], ["settings", "Settings"]];
+  return `<div class="navbar"><div class="items">${items.map(([ic, label]) =>
+    `<div class="item ${label === active ? "on" : ""}"><div class="pill">${icon(ic)}</div>${label}</div>`).join("")}</div>${gesture()}</div>`;
+};
+const monthBar = title => `<div class="appbar center"><div class="iconbtn">${icon("left")}</div><div class="title">${title}</div><div class="iconbtn disabled">${icon("right")}</div></div>`;
+const smallBar = (title, back) => `<div class="appbar small">${back ? `<div class="iconbtn">${icon("back")}</div>` : `<div style="width:12px"></div>`}<div class="title">${title}</div></div>`;
+
+const row = (c, title, amount, original) => `<div class="row">${badge(c)}<div class="t"><div class="n">${title}</div><div class="c">${CAT[c][1]}</div></div><div class="a">${amount}${original ? `<div class="o">${original}</div>` : ""}</div></div>`;
+
+const screens = {
+  expenses: () => `
+    ${status()}${monthBar("October 2026")}
+    <div class="content"><div class="list">
+      <div class="summary"><div class="l">Spent this month</div><div class="big">฿8,450.00</div><div class="s">52 expenses</div></div>
+      <div class="dayhdr">TODAY</div>
+      ${row("FOOD", "Iced latte", "฿65.00")}
+      ${row("TRANSPORT", "BTS Skytrain", "฿42.00")}
+      ${row("FOOD", "Pad Thai lunch", "฿75.00")}
+      <div class="dayhdr">YESTERDAY</div>
+      ${row("FUN", "Steam game", "฿335.81", "$9.99 USD")}
+      ${row("FOOD", "GrabFood delivery", "฿186.00")}
+      <div class="dayhdr">SUN, 11 OCT</div>
+      ${row("FUN", "Karaoke night", "฿280.00")}
+      ${row("FOOD", "Shabu dinner", "฿320.00")}
+      <div class="dayhdr">WED, 8 OCT</div>
+      ${row("BILLS", "Netflix", "฿403.38", "$12.00 USD")}
+    </div><div class="fab">${icon("add")}</div></div>
+    ${navbar("Expenses")}`,
+
+  add: () => `
+    ${status()}${smallBar("Add expense", true)}
+    <div class="content"><div class="form">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="field big" style="flex:1"><label>Amount</label>12</div>
+        <div class="obtn">USD${icon("drop")}</div>
+      </div>
+      <div class="infocard">≈ ฿403.38 · 1 USD = 33.6150 THB<br>Live rate from Frankfurter API</div>
+      <div class="field"><label>Title</label>Netflix</div>
+      <div class="lbl">Category</div>
+      <div class="chips">
+        <div class="chip">🍜 Food</div><div class="chip">🚕 Transport</div><div class="chip">🛍️ Shopping</div>
+        <div class="chip on">🧾 Bills</div><div class="chip">🎮 Fun</div><div class="chip">💊 Health</div><div class="chip">📦 Other</div>
+      </div>
+      <div class="obtn" style="padding:0 20px;gap:8px">${icon("date", 18)}13 Oct 2026</div>
+      <div class="field empty">Note (optional)</div>
+      <div class="btn">Save</div>
+    </div></div>
+    ${gesture()}`,
+
+  insights: () => {
+    const bar = (c, amount, pct) => `<div class="bar"><div class="top"><span>${CAT[c][0]} ${CAT[c][1]}</span><span>${amount} · ${pct}%</span></div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${CAT[c][2]}"></div><div class="rest"></div></div></div>`;
+    return `
+    ${status()}${monthBar("October 2026")}
+    <div class="content"><div class="cards">
+      <div class="card">
+        <div class="lab">Total spent</div><div class="tot">฿8,450.00</div>
+        ${bar("FOOD", "฿3,210.00", 38)}${bar("SHOPPING", "฿2,120.00", 25)}${bar("TRANSPORT", "฿1,480.00", 18)}
+        ${bar("BILLS", "฿1,040.00", 12)}${bar("FUN", "฿600.00", 7)}
+      </div>
+      <div class="ai">
+        <h3>✨ AI insights</h3>
+        <div>Food is your biggest category at ฿3,210 (38% of spending), mostly cafés and delivery on weekdays. Thirteen days in, you have already spent 14% more than at this point in September.</div>
+        <h4>Tips</h4>
+        <div>• Cut iced lattes from 5 to 3 a week to save about ฿520 a month.</div>
+        <div>• Swap two GrabFood orders a week for campus meals to save about ฿600.</div>
+        <div>• Take the BTS instead of Grab to campus to save around ฿400.</div>
+        <div class="btn tonal">${icon("refresh", 18)} Regenerate</div>
+      </div>
+    </div></div>
+    ${navbar("Insights")}`;
+  },
+
+  askai: () => `
+    ${status()}${smallBar("Ask your spending")}
+    <div class="content" style="display:flex;flex-direction:column">
+      <div class="chat" style="flex:1">
+        <div class="bubble ai">Hi! Ask me anything about your expenses. 💬</div>
+        <div class="bubble me">How much did I spend on food this week?</div>
+        <div class="bubble ai">You spent ฿742.00 on food this week across 9 expenses. The biggest was GrabFood delivery at ฿186.00 on Monday.</div>
+        <div class="bubble me">Compare to last week?</div>
+        <div class="bubble ai">That's ฿118.00 more than last week (฿624.00), mostly from two extra delivery orders.</div>
+      </div>
+      <div class="suggest"><div class="assist">How much did I spend on food this week?</div><div class="assist">What was my biggest expense this month?</div></div>
+      <div class="inputrow"><div class="input">Ask about your spending…</div><div class="send">${icon("send")}</div></div>
+      <div class="privacy">Your expense data is sent to Google Gemini to answer.</div>
+    </div>
+    ${navbar("Ask AI")}`,
+
+  settings: () => `
+    ${status()}${smallBar("Settings")}
+    <div class="content">
+      <div class="sect">CURRENCY</div>
+      <div class="li"><div class="t"><div class="h">Home currency</div><div class="s">All totals are shown in this currency</div></div><div class="tr strong">THB</div></div>
+      <div class="sect">DATA</div>
+      <div class="li"><div class="t"><div class="h">Load demo data</div><div class="s">Replace all expenses with 2 months of sample data</div></div></div>
+      <div class="li"><div class="t"><div class="h" style="color:var(--error)">Clear all expenses</div></div></div>
+      <div class="sect">ABOUT</div>
+      <div class="li"><div class="t"><div class="h">AI model</div></div><div class="tr">gemini-3.8-flash</div></div>
+      <div class="li"><div class="t"><div class="h">Gemini API key</div></div><div class="tr">Set</div></div>
+      <div class="li"><div class="t"><div class="h">Exchange rates</div></div><div class="tr">Frankfurter API</div></div>
+      <div class="li"><div class="t"><div class="h">Version</div></div><div class="tr">1.0</div></div>
+    </div>
+    ${navbar("Settings")}`,
+};
+
+const phone = name => `<div class="phone">${screens[name]()}</div>`;
+const which = location.hash.slice(1) || "overview";
+const root = document.getElementById("root");
+if (which === "overview") {
+  document.body.className = "overview";
+  const caps = [
+    ["expenses", "Expenses", "Monthly total · list by day"],
+    ["add", "Add expense", "Live currency conversion"],
+    ["insights", "Insights", "Breakdown + AI tips"],
+    ["askai", "Ask AI", "Chat about your spending"],
+    ["settings", "Settings", "Home currency · demo data"],
+  ];
+  root.innerHTML = `<div class="ov-title">SpendSense</div>
+    <div class="ov-sub">Track expenses in any currency, and let AI make sense of your spending</div>
+    <div class="ov-row">${caps.map(([n, t, s]) =>
+      `<div class="ov-item"><div class="frame">${phone(n)}</div><div class="ov-cap">${t}<span>${s}</span></div></div>`).join("")}</div>`;
+} else {
+  root.innerHTML = phone(which);
+}
+</script>
+</body>
+</html>
