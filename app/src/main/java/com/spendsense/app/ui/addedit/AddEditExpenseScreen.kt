@@ -38,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -165,7 +166,13 @@ fun AddEditExpenseScreen(
     }
 
     if (showDatePicker) {
-        val pickerState = rememberDatePickerState(initialSelectedDateMillis = state.date.toEpochDay() * MILLIS_PER_DAY)
+        val todayMillis = LocalDate.now().toEpochDay() * MILLIS_PER_DAY
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = state.date.toEpochDay() * MILLIS_PER_DAY,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis <= todayMillis
+            },
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {

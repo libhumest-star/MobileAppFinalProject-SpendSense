@@ -96,9 +96,12 @@ class ExpensesViewModel(
         viewModelScope.launch { expenseRepository.delete(expense.id) }
     }
 
-    /** Undo: saving with the same id puts the row back. */
+    /**
+     * Undo: re-inserts the expense as a new row. A fresh id gives the list item a fresh key, so it
+     * doesn't inherit the swiped row's saved "dismissed" state (which would delete it again).
+     */
     fun restore(expense: Expense) {
-        viewModelScope.launch { expenseRepository.save(expense) }
+        viewModelScope.launch { expenseRepository.save(expense.copy(id = 0)) }
     }
 
     companion object {

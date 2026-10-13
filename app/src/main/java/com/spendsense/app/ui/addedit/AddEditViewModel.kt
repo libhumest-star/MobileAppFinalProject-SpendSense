@@ -72,7 +72,7 @@ class AddEditViewModel(
     private val expenseRepository: ExpenseRepository,
     private val currencyRepository: CurrencyRepository,
     private val settingsRepository: SettingsRepository,
-    today: LocalDate = LocalDate.now(),
+    private val today: LocalDate = LocalDate.now(),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditUiState(isEdit = expenseId != 0L, date = today))
@@ -115,7 +115,8 @@ class AddEditViewModel(
     fun onAmountChange(text: String) = _uiState.update { it.copy(amountText = text, errorMessage = null) }
     fun onTitleChange(text: String) = _uiState.update { it.copy(title = text) }
     fun onCategoryChange(category: Category) = _uiState.update { it.copy(category = category) }
-    fun onDateChange(date: LocalDate) = _uiState.update { it.copy(date = date) }
+    /** No future dates: the month switchers stop at the current month, so the expense would be unreachable. */
+    fun onDateChange(date: LocalDate) = _uiState.update { it.copy(date = minOf(date, today)) }
     fun onNoteChange(text: String) = _uiState.update { it.copy(note = text) }
 
     fun onCurrencyChange(code: String) {
@@ -143,7 +144,8 @@ class AddEditViewModel(
     fun save() {
         val state = _uiState.value
         val amount = state.amount
-        if (amount == null || !state.isValid || state.isSaving) return
+        // isDone: the screen is still tappable while it animates away after finishing.
+        if (amount == null || !state.isValid || state.isSaving || state.isDone) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             val originalAmount = round2(amount)
@@ -181,7 +183,7 @@ class AddEditViewModel(
     }
 
     fun delete() {
-        if (expenseId == 0L) return
+        if (expenseId == 0L || _uiState.value.isSaving || _uiState.value.isDone) return
         viewModelScope.launch {
             expenseRepository.delete(expenseId)
             _uiState.update { it.copy(isDone = true) }

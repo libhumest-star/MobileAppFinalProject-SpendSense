@@ -108,6 +108,46 @@ class AddEditViewModelTest {
         assertTrue(vm.uiState.value.isDone)
     }
 
+    // Month switchers stop at the current month, so a future-dated expense could never be found again.
+    @Test
+    fun futureDate_isClampedToToday() {
+        val vm = viewModel()
+        vm.onDateChange(today.plusDays(3))
+        assertEquals(today, vm.uiState.value.date)
+        vm.onDateChange(today.minusDays(2))
+        assertEquals(today.minusDays(2), vm.uiState.value.date)
+    }
+
+    // The screen stays tappable for ~700 ms while it animates away after finishing.
+    @Test
+    fun doubleTapSave_savesOnlyOnce() {
+        val vm = viewModel()
+        vm.onAmountChange("85")
+        vm.onTitleChange("Lunch")
+        vm.save()
+        vm.save()
+        assertEquals(1, expenses.expenses.value.size)
+    }
+
+    @Test
+    fun saveAfterDelete_doesNotBringExpenseBack() {
+        expenses.expenses.value = listOf(Expense(3, "Lunch", Category.FOOD, 85.0, 85.0, "THB", today))
+        val vm = viewModel(expenseId = 3)
+        vm.delete()
+        vm.save()
+        assertTrue(expenses.expenses.value.isEmpty())
+    }
+
+    @Test
+    fun deleteAfterSave_keepsExpense() {
+        expenses.expenses.value = listOf(Expense(3, "Lunch", Category.FOOD, 85.0, 85.0, "THB", today))
+        val vm = viewModel(expenseId = 3)
+        vm.onTitleChange("Big lunch")
+        vm.save()
+        vm.delete()
+        assertEquals("Big lunch", expenses.expenses.value.single().title)
+    }
+
     @Test
     fun delete_removesExpenseAndFinishes() {
         expenses.expenses.value = listOf(Expense(3, "Lunch", Category.FOOD, 85.0, 85.0, "THB", today))

@@ -57,7 +57,7 @@ The designs are rendered from `docs/mockups/app-screens.html` (`bash docs/mockup
 ./gradlew :app:testDebugUnitTest
 ```
 
-61 unit tests cover money/date helpers, currency caching and errors, the AI prompt builder,
+69 unit tests cover money/date helpers, currency caching and errors, the AI prompt builder,
 the Gemini repository, and the Add/Edit, Settings, Insights and Ask AI logic.
 `ExpenseDaoTest` (Room) runs on a device with `./gradlew :app:connectedDebugAndroidTest`.
 

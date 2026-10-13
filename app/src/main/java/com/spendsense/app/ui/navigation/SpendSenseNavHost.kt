@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -45,6 +47,14 @@ private fun TopLevelDestination.icon(): Painter = when (this) {
     TopLevelDestination.INSIGHTS -> painterResource(R.drawable.ic_insights)
     TopLevelDestination.ASK_AI -> painterResource(R.drawable.ic_ai)
     TopLevelDestination.SETTINGS -> rememberVectorPainter(Icons.Default.Settings)
+}
+
+/**
+ * Runs a navigation action only while this destination is RESUMED. During the ~700 ms enter/exit
+ * animation it is not, so a double tap can't open a screen twice or pop past the start screen.
+ */
+internal fun LifecycleOwner.runIfResumed(action: () -> Unit) {
+    if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) action()
 }
 
 @Composable
@@ -91,14 +101,16 @@ fun SpendSenseNavHost(navController: NavHostController = rememberNavController()
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding),
         ) {
-            composable<ExpensesRoute> {
+            composable<ExpensesRoute> { entry ->
                 ExpensesScreen(
-                    onAddExpense = { navController.navigate(AddEditRoute()) },
-                    onEditExpense = { id -> navController.navigate(AddEditRoute(expenseId = id)) },
+                    onAddExpense = { entry.runIfResumed { navController.navigate(AddEditRoute()) } },
+                    onEditExpense = { id ->
+                        entry.runIfResumed { navController.navigate(AddEditRoute(expenseId = id)) }
+                    },
                 )
             }
-            composable<AddEditRoute> {
-                AddEditExpenseScreen(onDone = { navController.popBackStack() })
+            composable<AddEditRoute> { entry ->
+                AddEditExpenseScreen(onDone = { entry.runIfResumed { navController.popBackStack() } })
             }
             composable<InsightsRoute> { InsightsScreen() }
             composable<AskAiRoute> { AskAiScreen() }
