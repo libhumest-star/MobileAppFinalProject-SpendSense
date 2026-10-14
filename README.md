@@ -1,5 +1,10 @@
 # SpendSense
 
+Name: Bhume Limpaisansakun
+
+ID: 2320210160
+
+
 An Android expense tracker that makes sense of your spending with AI.
 
 Log expenses in any major currency. SpendSense converts them to your home currency at live
